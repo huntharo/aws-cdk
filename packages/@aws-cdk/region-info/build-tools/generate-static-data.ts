@@ -3,8 +3,8 @@ import * as fs from 'fs-extra';
 import { Default } from '../lib/default';
 import { AWS_REGIONS, AWS_SERVICES } from './aws-entities';
 import {
-  APPMESH_ECR_ACCOUNTS, AWS_CDK_METADATA, AWS_OLDER_REGIONS, CLOUDWATCH_LAMBDA_INSIGHTS_ARNS, DLC_REPOSITORY_ACCOUNTS,
-  ELBV2_ACCOUNTS, FIREHOSE_CIDR_BLOCKS, PARTITION_MAP, ROUTE_53_BUCKET_WEBSITE_ZONE_IDS, EBS_ENV_ENDPOINT_HOSTED_ZONE_IDS,
+  APPMESH_ECR_ACCOUNTS, AWS_CDK_METADATA, AWS_OLDER_REGIONS, CLOUDWATCH_LAMBDA_INSIGHTS_ARNS, CLOUDWATCH_LAMBDA_INSIGHTS_ARM_ARNS,
+  DLC_REPOSITORY_ACCOUNTS, ELBV2_ACCOUNTS, FIREHOSE_CIDR_BLOCKS, PARTITION_MAP, ROUTE_53_BUCKET_WEBSITE_ZONE_IDS, EBS_ENV_ENDPOINT_HOSTED_ZONE_IDS,
 } from './fact-tables';
 
 async function main(): Promise<void> {
@@ -14,6 +14,7 @@ async function main(): Promise<void> {
   checkRegions(FIREHOSE_CIDR_BLOCKS);
   checkRegions(ROUTE_53_BUCKET_WEBSITE_ZONE_IDS);
   checkRegionsSubMap(CLOUDWATCH_LAMBDA_INSIGHTS_ARNS);
+  checkRegionsSubMap(CLOUDWATCH_LAMBDA_INSIGHTS_ARM_ARNS);
 
   const lines = [
     "import { Fact, FactName } from './fact';",
@@ -80,6 +81,10 @@ async function main(): Promise<void> {
 
     for (const version in CLOUDWATCH_LAMBDA_INSIGHTS_ARNS) {
       registerFact(region, ['cloudwatchLambdaInsightsVersion', version], CLOUDWATCH_LAMBDA_INSIGHTS_ARNS[version][region]);
+    }
+
+    for (const version in CLOUDWATCH_LAMBDA_INSIGHTS_ARM_ARNS) {
+      registerFact(region, ['cloudwatchLambdaInsightsArmVersion', version], CLOUDWATCH_LAMBDA_INSIGHTS_ARM_ARNS[version][region]);
     }
   }
   lines.push('  }');

@@ -1,5 +1,6 @@
 import { Aws, CfnMapping, Fn, IResolveContext, Lazy, Stack, Token } from '@aws-cdk/core';
 import { FactName, RegionInfo } from '@aws-cdk/region-info';
+import { Architecture } from './architecture';
 
 // This is the name of the mapping that will be added to the CloudFormation template, if a stack is region agnostic
 const DEFAULT_MAPPING_PREFIX = 'LambdaInsightsVersions';
@@ -32,6 +33,11 @@ export abstract class LambdaInsightsVersion {
   public static readonly VERSION_1_0_98_0 = LambdaInsightsVersion.fromInsightsVersion('1.0.98.0');
 
   /**
+   * Version 1.0.98.0 - ARM
+   */
+  public static readonly VERSION_1_0_98_0_ARM = LambdaInsightsVersion.fromInsightsVersion('1.0.98.0', Architecture.ARM_64);
+
+  /**
    * Use the insights extension associated with the provided ARN. Make sure the ARN is associated
    * with same region as your function
    *
@@ -45,17 +51,19 @@ export abstract class LambdaInsightsVersion {
   }
 
   // Use the verison to build the object. Not meant to be called by the user -- user should use e.g. VERSION_1_0_54_0
-  private static fromInsightsVersion(insightsVersion: string): LambdaInsightsVersion {
+  private static fromInsightsVersion(insightsVersion: string, arch: Architecture = Architecture.X86_64): LambdaInsightsVersion {
 
     // Check if insights version is valid. This should only happen if one of the public static readonly versions are set incorrectly
-    const versionExists = RegionInfo.regions.some(regionInfo => regionInfo.cloudwatchLambdaInsightsArn(insightsVersion));
+    const versionExists = RegionInfo.regions.some(regionInfo => arch === Architecture.X86_64
+      ? regionInfo.cloudwatchLambdaInsightsArn(insightsVersion)
+      : regionInfo.cloudwatchLambdaInsightsArmArn(insightsVersion));
     if (!versionExists) {
       throw new Error(`Insights version ${insightsVersion} does not exist.`);
     }
 
     class InsightsVersion extends LambdaInsightsVersion {
       public readonly layerVersionArn = Lazy.uncachedString({
-        produce: (context) => getVersionArn(context, insightsVersion),
+        produce: (context) => getVersionArn(context, insightsVersion, arch),
       });
     }
     return new InsightsVersion();
@@ -73,14 +81,16 @@ export abstract class LambdaInsightsVersion {
  *
  * This function is run on CDK synthesis.
  */
-function getVersionArn(context: IResolveContext, insightsVersion: string): string {
+function getVersionArn(context: IResolveContext, insightsVersion: string, arch: Architecture = Architecture.X86_64): string {
 
   const scopeStack = Stack.of(context.scope);
   const region = scopeStack.region;
 
   // Region is defined, look up the arn, or throw an error if the version isn't supported by a region
   if (region !== undefined && !Token.isUnresolved(region)) {
-    const arn = RegionInfo.get(region).cloudwatchLambdaInsightsArn(insightsVersion);
+    const arn = arch === Architecture.X86_64
+      ? RegionInfo.get(region).cloudwatchLambdaInsightsArn(insightsVersion)
+      : RegionInfo.get(region).cloudwatchLambdaInsightsArmArn(insightsVersion);
     if (arn === undefined) {
       throw new Error(`Insights version ${insightsVersion} is not supported in region ${region}`);
     }
@@ -120,7 +130,9 @@ function getVersionArn(context: IResolveContext, insightsVersion: string): strin
 
   const mapName = DEFAULT_MAPPING_PREFIX + insightsVersion.split('.').join('');
   const mapping: { [k1: string]: { [k2: string]: any } } = {};
-  const region2arns = RegionInfo.regionMap(FactName.cloudwatchLambdaInsightsVersion(insightsVersion));
+  const region2arns = RegionInfo.regionMap( arch === Architecture.X86_64
+    ? FactName.cloudwatchLambdaInsightsVersion(insightsVersion)
+    : FactName.cloudwatchLambdaInsightsArmVersion(insightsVersion));
   for (const [reg, arn] of Object.entries(region2arns)) {
     mapping[reg] = { arn };
   }

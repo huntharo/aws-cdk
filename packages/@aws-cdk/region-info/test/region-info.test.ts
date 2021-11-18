@@ -1,5 +1,5 @@
 import { AWS_REGIONS, AWS_SERVICES } from '../build-tools/aws-entities';
-import { CLOUDWATCH_LAMBDA_INSIGHTS_ARNS } from '../build-tools/fact-tables';
+import { CLOUDWATCH_LAMBDA_INSIGHTS_ARNS, CLOUDWATCH_LAMBDA_INSIGHTS_ARM_ARNS } from '../build-tools/fact-tables';
 import { RegionInfo } from '../lib';
 
 test('built-in data is correct', () => {
@@ -9,11 +9,16 @@ test('built-in data is correct', () => {
 
     const servicePrincipals: { [service: string]: string | undefined } = {};
     const lambdaInsightsVersions: { [service: string]: string | undefined } = {};
+    const lambdaInsightsArmVersions: { [service: string]: string | undefined } = {};
 
     AWS_SERVICES.forEach(service => servicePrincipals[service] = region.servicePrincipal(service));
 
     for (const version in CLOUDWATCH_LAMBDA_INSIGHTS_ARNS) {
       lambdaInsightsVersions[version] = region.cloudwatchLambdaInsightsArn(version);
+    };
+
+    for (const version in CLOUDWATCH_LAMBDA_INSIGHTS_ARM_ARNS) {
+      lambdaInsightsArmVersions[version] = region.cloudwatchLambdaInsightsArmArn(version);
     };
 
     snapshot[name] = {
@@ -24,6 +29,7 @@ test('built-in data is correct', () => {
       vpcEndPointServiceNamePrefix: region.vpcEndpointServiceNamePrefix,
       servicePrincipals,
       lambdaInsightsVersions,
+      lambdaInsightsArmVersions,
     };
   }
   expect(snapshot).toMatchSnapshot();

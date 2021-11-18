@@ -126,6 +126,14 @@ export class RegionInfo {
   }
 
   /**
+   * The ARN of the CloudWatch Lambda Insights extension, for the given version on arm64.
+   * @param insightsVersion the version (e.g. 1.0.98.0)
+   */
+  public cloudwatchLambdaInsightsArmArn(insightsVersion: string): string | undefined {
+    return Fact.find(this.name, FactName.cloudwatchLambdaInsightsArmVersion(insightsVersion));
+  }
+
+  /**
    * The ID of the AWS account that owns the public ECR repository that contains the
    * AWS App Mesh Envoy Proxy images in a given region.
    */

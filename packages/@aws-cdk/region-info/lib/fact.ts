@@ -170,6 +170,13 @@ export class FactName {
   }
 
   /**
+   * The ARN of CloudWatch Lambda Insights (Arm) for a version (e.g. 1.0.98.0)
+   */
+  public static cloudwatchLambdaInsightsArmVersion(version: string) {
+    return `cloudwatch-lambda-insights-version-arm:${version.split('.').join('_')}`;
+  }
+
+  /**
    * The name of the regional service principal for a given service.
    *
    * @param service the service name, either simple (e.g: `s3`, `codedeploy`) or qualified (e.g: `s3.amazonaws.com`).
